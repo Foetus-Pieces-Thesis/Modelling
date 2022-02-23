@@ -10,6 +10,7 @@
       },
       "url": "https://packages.unity.com"
     },
+<<<<<<< HEAD
     "com.unity.connect.share": {
       "version": "4.2.3",
       "depth": 0,
@@ -27,6 +28,8 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
+=======
+>>>>>>> 9a661de443f1963005796c3788be5320a0ba10bf
     "com.unity.ext.nunit": {
       "version": "1.0.6",
       "depth": 1,
@@ -66,6 +69,7 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
+<<<<<<< HEAD
     "com.unity.recorder": {
       "version": "2.5.7",
       "depth": 0,
@@ -75,6 +79,8 @@
       },
       "url": "https://packages.unity.com"
     },
+=======
+>>>>>>> 9a661de443f1963005796c3788be5320a0ba10bf
     "com.unity.services.core": {
       "version": "1.0.1",
       "depth": 1,
@@ -84,6 +90,7 @@
       },
       "url": "https://packages.unity.com"
     },
+<<<<<<< HEAD
     "com.unity.settings-manager": {
       "version": "1.0.2",
       "depth": 1,
@@ -91,6 +98,8 @@
       "dependencies": {},
       "url": "https://packages.unity.com"
     },
+=======
+>>>>>>> 9a661de443f1963005796c3788be5320a0ba10bf
     "com.unity.test-framework": {
       "version": "1.1.29",
       "depth": 0,
