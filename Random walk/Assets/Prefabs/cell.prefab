@@ -64,7 +64,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 472ada6a14bd7a945ba5e99b9041d4a2, type: 2}
+  - {fileID: 2100000, guid: 5c8a37e0a3f5a2e45b5e8eae27daa237, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -127,11 +127,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7a83e9d37dd983a4e9caaee9ec2e1902, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxSpeed: 15
-  steerStrength: 25
-  wanderStrength: 8
+  maxSpeed: 46
+  steerStrength: 20
+  wanderStrength: 10
   viewRadius: 5
-  cohesion: 0.5
+  cohesion: 0
   daughter: {fileID: 5539744805037857936}
   cellMask:
     serializedVersion: 2
