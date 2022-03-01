@@ -10,7 +10,7 @@ public class wander : MonoBehaviour{
     public float steerStrength = 0.2f;
     [Range(0,10)]
     public float wanderStrength = 1.0f;
-    [Range(1,10)]
+    [Range(1,100)]
     public float viewRadius = 1.5f;
     [Range(0,1)]
     public float cohesion = 0f;
@@ -87,22 +87,21 @@ public class wander : MonoBehaviour{
     */
 
 
-/*  private void OnDrawGizmos()
+/*    private void OnDrawGizmos()
     {
-        Gizmos.DrawWireSphere(this.transform.position, viewRadius*21f);
+        Gizmos.DrawWireSphere(this.transform.position, viewRadius);
     }*/
 
     private void Update()
     {
-        // 0-Shell
+        /*// 0-Shell
         Collider[] cellsInView = Physics.OverlapSphere(transform.position, viewRadius, cellMask);
         float cellCount = cellsInView.Length;
-        /*Debug.Log("shell0: " + cellCount);*/
+        *//*Debug.Log("shell0: " + cellCount);*//*
 
         Vector3 resultantForce = Vector3.zero;
-
-        /*
-        if (cellCount != 0)
+*/
+        /*if (cellCount != 0)
         {
             foreach (var cell in cellsInView)
             {
@@ -118,7 +117,7 @@ public class wander : MonoBehaviour{
                 float distanceToCell = Vector3.Distance(rbody.position, cell.transform.position);
                 Debug.Log("distanceToCell0: " + distanceToCell);
                 Debug.Log("cohesion: " + cohesion);
-                Vector3 desiredSteeringForce = (distanceToCell < 1f) ? (-0.05f * (desiredVelocity - velocity) * cohesion) : ((desiredVelocity - velocity) * steerStrength * cohesion / (distanceToCell * distanceToCell));
+                Vector3 desiredSteeringForce = (distanceToCell < 1f) ? (-1f * (desiredVelocity - velocity) * cohesion) : ((desiredVelocity - velocity) * steerStrength * cohesion / (distanceToCell * distanceToCell));
                 Debug.Log("desiredSteeringForce0: " + desiredSteeringForce);
 
                 resultantForce += desiredSteeringForce;
@@ -133,59 +132,61 @@ public class wander : MonoBehaviour{
 
             nextPosition += (velocity * Time.deltaTime);// + RandomStep();
             Debug.Log("desiredPosition0: " + nextPosition);
-        }
-        */
+        }*/
 
-        // n-shell
-        float goldenRatio = (1f + Mathf.Sqrt(5f)) / 2f;
-        for (int n = 1; n < 5; n++)
-        {
-            float f = Mathf.Round(Mathf.Pow(goldenRatio, n + 1) / Mathf.Sqrt(5));//fibonacci number
-            cellsInView = Physics.OverlapSphere(rbody.position, viewRadius * f, cellMask);
-            cellCount = cellsInView.Length;
-            Vector3 toCenterOfCrowd = new Vector3();
-            float crowdSpread = 0f;
-
-
-            Debug.Log("shell" + n + ": " + cellCount);
-            if (cellCount >= 2)
-            {
-                foreach (var cell in cellsInView)
+        /*
+                // n-shell (n = [1,5])
+                float goldenRatio = (1f + Mathf.Sqrt(5f)) / 2f;
+                for (int n = 1; n < 5; n++)
                 {
-                    toCenterOfCrowd += (cell.transform.position - rbody.position) / cellCount;// equivalent to a sample mean  
-                }
-                Debug.Log("toCenterofCrowd" + n + ": " + toCenterOfCrowd);
+                    float f = Mathf.Round(Mathf.Pow(goldenRatio, n ) / Mathf.Sqrt(5));//fibonacci number
+                    cellsInView = Physics.OverlapSphere(rbody.position, viewRadius * f, cellMask);
+                    cellCount = cellsInView.Length;
+                    Vector3 toCenterOfCrowd = new Vector3();
+                    float crowdSpread = 0f;
 
-                foreach (var cell in cellsInView)
-                {
-                    crowdSpread += ((cell.transform.position - rbody.position) - toCenterOfCrowd).sqrMagnitude / (cellCount - 1);// equivalent to a sample variance
-                }
-                Debug.Log("variance" + n + ": " + crowdSpread);
 
-                float distanceToCenter = toCenterOfCrowd.magnitude;
-                float virtualAuthority = (cellCount * cellCount) / (crowdSpread + cellCount);
+                    Debug.Log("shell" + n + ": " + cellCount);
+                    if (cellCount >= 2)
+                    {
+                        foreach (var cell in cellsInView)
+                        {
+                            toCenterOfCrowd += (cell.transform.position - rbody.position) / cellCount;// equivalent to a sample mean  
+                        }
+                        Debug.Log("toCenterofCrowd" + n + ": " + toCenterOfCrowd);
 
-                Vector3 desiredVelocity = toCenterOfCrowd * (maxSpeed *RandomGaussian());
-                Vector3 desiredSteeringForce = (desiredVelocity - velocity) * steerStrength * cohesion * virtualAuthority / (distanceToCenter * distanceToCenter);
+                        foreach (var cell in cellsInView)
+                        {
+                            crowdSpread += ((cell.transform.position - rbody.position) - toCenterOfCrowd).sqrMagnitude / (cellCount - 1);// equivalent to a sample variance
+                        }
+                        Debug.Log("variance" + n + ": " + crowdSpread);
 
-                resultantForce += desiredSteeringForce;
-                Debug.Log("desiredSteeringForce" + n + ": " + desiredSteeringForce);
-                Debug.Log("resultantForce" + n + ": " + resultantForce);
-                Vector3 acceleration = Vector3.ClampMagnitude(resultantForce, steerStrength) / 1; //normalised mass = 1
-                velocity = Vector3.ClampMagnitude(velocity + (acceleration * Time.deltaTime), maxSpeed);
-                Debug.Log("velocity" + n + ": " + velocity);
+                        float distanceToCenter = toCenterOfCrowd.magnitude;
+                        float virtualAuthority = (cellCount * cellCount*cellCount) / (crowdSpread + cellCount*cellCount);
 
-                nextPosition += (velocity * Time.deltaTime);
-            }
-        }
+                        Vector3 desiredVelocity = toCenterOfCrowd * (maxSpeed * RandomGaussian());
+                        Vector3 desiredSteeringForce = (distanceToCenter < 1f) ? (-1f * (desiredVelocity - velocity) * cohesion * virtualAuthority) : (desiredVelocity - velocity) * steerStrength * cohesion * virtualAuthority / (distanceToCenter * distanceToCenter);
+
+                        resultantForce += desiredSteeringForce;
+                        Debug.Log("desiredSteeringForce" + n + ": " + desiredSteeringForce);
+                        Debug.Log("resultantForce" + n + ": " + resultantForce);
+                        Vector3 acceleration = Vector3.ClampMagnitude(resultantForce, steerStrength) / 1; //normalised mass = 1
+                        velocity = Vector3.ClampMagnitude(velocity + (acceleration * Time.deltaTime), maxSpeed);
+                        Debug.Log("velocity" + n + ": " + velocity);
+
+                        nextPosition += (velocity * Time.deltaTime);
+                    }
+                }*/
 
         //HandleMovement();
+        //RandomStep();
         Debug.Log("Update time: " + Time.deltaTime);
     }
 
     void FixedUpdate()
     {
-        HandleMovement();   
+        //HandleMovement();   
+        RandomStep();
         Debug.Log("FixedUpdate time: " + Time.deltaTime);
     }
 
@@ -220,7 +221,7 @@ public class wander : MonoBehaviour{
 
 
     // Returns a Random step in 3D - determined by a random Force
-    private Vector3 RandomStep()
+    private void RandomStep()
     {
         
         desiredDirection = (desiredDirection + Random.insideUnitSphere*wanderStrength).normalized;//pseudo-random nudge of direction (Order 1 Markov process)
@@ -231,19 +232,22 @@ public class wander : MonoBehaviour{
 
         velocity = Vector3.ClampMagnitude(velocity + (acceleration * Time.deltaTime), maxSpeed);//v = u + at
 
-        Vector3 randomStep = velocity * Time.deltaTime;//( Vector3.ClampMagnitude((acceleration * Time.deltaTime), maxSpeed) * Time.deltaTime );
+        //Vector3 randomStep = velocity * Time.deltaTime;//( Vector3.ClampMagnitude((acceleration * Time.deltaTime), maxSpeed) * Time.deltaTime );
+        nextPosition += velocity * Time.deltaTime;
 
-        return randomStep;
+        rbody.MovePosition(nextPosition);
+
+        //return randomStep;
     }
 
     // Handles movement - clustering + random step 
-    private void HandleMovement()
+  /*  private void HandleMovement()
     {  
-        rbody.MovePosition(nextPosition+RandomStep());
+        rbody.MovePosition(RandomStep());
         // increment total path length
         pathLength += (velocity * Time.deltaTime).magnitude;
 
-    }
+    }*/
 
 }
 
