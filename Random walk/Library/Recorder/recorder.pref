@@ -44,23 +44,23 @@ MonoBehaviour:
       m_Leaf: Recordings
       m_ForceAssetFolder: 0
       m_AbsolutePath: 
-    m_FileName: randomwalk<Take>
+    m_FileName: clustering<Take>
   m_ImageInputSelector:
     m_Selected: cameraInputSettings
     cameraInputSettings:
       m_OutputResolution:
         m_CustomWidth: 1024
         m_CustomHeight: 1024
-        imageHeight: 1080
+        imageHeight: 720
         maxSupportedHeight: 4320
         m_AspectRatio:
           m_CustomAspectX: 1
           m_CustomAspectY: 1
           m_ImageAspect: 1
-      source: 2
-      cameraTag: 
+      source: 1
+      cameraTag: player camera
       flipFinalOutput: 1
-      captureUI: 0
+      captureUI: 1
     renderTextureInputSettings:
       renderTexture: {fileID: 0}
       flipFinalOutput: 1
