@@ -71,13 +71,13 @@ public class HSCAgent : AbstractAgent
         Collider[] temp_shell = Physics.OverlapSphere(this.transform.position, viewRadius(n), hsc_controller.searchLayer); 
         
         List<Collider> shell_n = new List<Collider>();
-        foreach (var cell in temp_shell)
-        {
-            shell_n.Add(cell);
-        }
+        /* foreach (var cell in temp_shell)
+         {
+             shell_n.Add(cell);
+         }*/
 
 
-        /*if (n != 0)
+        if (n != 0)
         {
             int j = 0;
             foreach (var cell in temp_shell)
@@ -97,7 +97,7 @@ public class HSCAgent : AbstractAgent
                 shell_n.Add(cell);
             }
 
-        }*/
+        }
 
 
         //Display lines showing network relationship between cells
@@ -122,31 +122,6 @@ public class HSCAgent : AbstractAgent
         
     }
         
-
-
-   /* void HSCBehaviourRandomWalk()
-    {
-
-        desiredDirection = (desiredDirection + Random.insideUnitSphere * hsc_controller.wanderStrength).normalized;//pseudo-random nudge of direction (Order 1 Markov process)
-
-        Vector3 desiredVelocity = desiredDirection * (hsc_controller.maxSpeed * RandomGaussian());//speed is normally distribution
-        *//* Vector3 desiredSteeringForce = (desiredVelocity - velocity) * hsc_controller.steerStrength;
-
-         Vector3 acceleration = desiredSteeringForce / hsc_controller.mass;
-         acceleration = Vector3.ClampMagnitude(acceleration, hsc_controller.steerStrength); 
-
-         velocity = Vector3.ClampMagnitude(velocity + (acceleration * norm), hsc_controller.maxSpeed);//v = u + at*//*
-        velocity = desiredVelocity;
-        Vector3 prevPos = this.transform.position;
-        
-        transform.position = prevPos + (velocity * norm);
-
-        distCovered += Vector3.Distance(transform.position, prevPos);
-
-        hsc_controller.AgentReportDistCovered(distCovered);
-        hsc_controller.AgentReportState(id, transform.position, velocity);
-
-    }*/
 
     Vector3 RandomStep()
     {
@@ -183,18 +158,41 @@ public class HSCAgent : AbstractAgent
     }
 
 
-    // considers attractive force to a cell that is distance d away, within a neighbourhood of radius r.
-    float forceFunction(float d, float r, float n=0)
+    // considers attractive force to a cell that is distance d away, within a neighbourhood of radius r - defined by n.
+    float forceFunction(float d, int n=0)
     {
-        float s = r * hsc_controller.separationFactor;// s = equilibrium distance
-        float K = hsc_controller.clusterStiffness *4f/ ((r - s) * (r + s)); // K = max attractive force
-        K *= Mathf.Exp(-n * hsc_controller.localBiasFactor);
+        float s = viewRadius(n) * hsc_controller.separationFactor;// s = equilibrium distance
+        float K = hsc_controller.clusterStiffness;// * s * s;// The stiffness or the energy of cluster system
 
-        return  K * (d - s) * (r - d);
+        if (n == 0) 
+        {
+
+            if (hsc_controller.laplacianSpringSystem)
+            {
+                //return K * ((d * d) / (Mathf.Pow(s, 4)) - Mathf.Pow(s, -2)) * Mathf.Exp(-d * d / (2 * s * s)); //K * (d - s) * (r - d);
+                return K * ((d * d) / (Mathf.Pow(s, 4)) - Mathf.Pow(s,-2)) * Mathf.Exp(-d * d / (2 * s * s)); //NLoG
+            }
+            else
+            {
+                float r = viewRadius(n);
+                K *= 4f / ((r - s) * (r - s)); // K = max attractive force
+                return K * (d - s) * (r - d);
+            }
+
+        }
+        else
+        {
+            K *= Mathf.Exp(-n * hsc_controller.localBiasFactor);
+
+            float center = (viewRadius(n) + viewRadius(n - 1)) / 2;
+            float y = (d - center);
+
+            return K* y/(s*s) * Mathf.Exp(-y*y/(2*s*s));
+        }
     }
 
-/*
-    float _3DGaussianMask(Vector3 globalCoords, float r,  float sigma)
+
+    /*float _3DGaussianMask(Vector3 globalCoords, float r,  float sigma)
     {
         Vector3 localCoords = (globalCoords - this.transform.position) / r;
 
@@ -209,9 +207,9 @@ public class HSCAgent : AbstractAgent
     void HSCBehaviourCluster()
     {
         Vector3 resultantForce = Vector3.zero;
+        Vector3 F_drag = hsc_controller.viscousity * velocity;
 
-      
-        for(int n = 0; n < hsc_controller.shell.Length;n++)
+        for (int n = 0; n < hsc_controller.shell.Length;n++)
         {
             List<Collider> cellsInView = HSCBehaviourFindNeighbours(n);
 
@@ -224,13 +222,15 @@ public class HSCAgent : AbstractAgent
                 float dist2cell = Vector3.Distance(cell.transform.position, this.transform.position);
                 Vector3 dir2cell = (cell.transform.position - this.transform.position).normalized;
 
-                resultantForce += dir2cell * forceFunction(dist2cell, viewRadius(n), n);// * Mathf.Log(cellCount + 1);
+
+                
+                resultantForce += dir2cell * forceFunction(dist2cell, n);// * Mathf.Log(cellCount + 1);
 
             }
 
         }
 
-        MoveFromForce(resultantForce);
+        MoveFromForce(resultantForce-F_drag);
     }
 
     // Returns a random Gaussian number in range [minValue maxValue] (default = [0,1])
@@ -260,7 +260,14 @@ public class HSCAgent : AbstractAgent
     // Returns view radius of a given shell n (informed by seedViewRadius)
     float viewRadius(int n)
     {
-        return hsc_controller.seedViewRadius * hsc_controller.shell[n];
+        if (n >= 0)
+        {
+            return hsc_controller.seedViewRadius * hsc_controller.shell[n];
+        }
+        else
+        {
+            return 0;
+        }
     }
 
 
@@ -271,10 +278,15 @@ public class HSCAgent : AbstractAgent
             Vector3 pos = this.transform.position;
             if (!bounds.Contains(this.transform.position))
             {
-                Vector3 fromCenterToHere = this.transform.position - bounds.center;
+                pos.x = Mathf.Clamp(pos.x, bounds.center.x - bounds.extents.x, bounds.center.x + bounds.extents.x);
+                pos.y = Mathf.Clamp(pos.y, bounds.center.y - bounds.extents.y, bounds.center.y + bounds.extents.y);
+                pos.z = Mathf.Clamp(pos.z, bounds.center.z - bounds.extents.z, bounds.center.z + bounds.extents.z);
+                transform.position = pos;
+
+                /*Vector3 fromCenterToHere = this.transform.position - bounds.center;
                 this.transform.position = bounds.center - fromCenterToHere;
                 // transform.position = this.transform.position + transform.forward * (velocity * Time.deltaTime);
-                transform.position = this.transform.position + (velocity * norm);
+                transform.position = this.transform.position + (velocity * norm);*/
             }
 
         }

@@ -27,13 +27,14 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections;
 using System.Collections.Generic;
-
+using System.IO;
 using ABMU.Core;
 using ABMU;
 
 public class HSCController : AbstractController
 {
     [Header("Simulation Parameters")]
+    public bool initFromFile = true;
     public bool showNeighbourRelations = false;
     public bool applyBounds = false;
     public Bounds bounds;
@@ -60,33 +61,49 @@ public class HSCController : AbstractController
     [Range(0f, 50f)]
     public float clusterStiffness = 1.5f;
     [Range(0f, 1f)]
-    public float separationFactor = 0.1f;
+    public float separationFactor = 0.25f;
     
-
     [Header("View Shell(s)")]
     [Range(0.1f, 50.0f)] 
     public float seedViewRadius = 10f;
-    public float[] shell; //= new float[5] { 1, 0, 0, 0, 0, 0 };
+    public float[] shell;
     [Range(0.0f,10f)]
     public float localBiasFactor = 1f;
+    public bool laplacianSpringSystem = false;
+    [Range(0f,1f)]
+    public float viscousity = 0.1f;
+
+    [Header("Save Simulation Results")]
+    public string filename = "PositionLog.csv";
     public LayerMask searchLayer;
+
+ 
 
     public class cell
     {
 
-        public List<Vector3> position = new List<Vector3>();
-        public List<Vector3> velocity = new List<Vector3>();
+        private Vector3 position;
+        private Vector3 velocity;
 
         public cell(Vector3 initPos, Vector3 initVelocity)
         {
-            position.Add(initPos);
-            velocity.Add(initVelocity);
+            position = initPos;
+            velocity = initVelocity;
         }
 
         public void addState(Vector3 newPos, Vector3 newVelocity)
+        { 
+            position = newPos;
+            velocity = newVelocity;
+        }
+
+        public Vector3 getPos()
         {
-            position.Add(newPos);
-            velocity.Add(newVelocity);
+            return position;
+        }
+        public Vector3 getVel()
+        {
+            return velocity;
         }
 
     }
@@ -97,17 +114,54 @@ public class HSCController : AbstractController
     // intialise cell positions
     public override void Init()
     {
+        
         base.Init();
+
+        CreateFile();
 
         frameCount = 0;
 
-        for (var i = 0; i < spawnCount; i++) {
-            Vector3 pos = Utilities.RandomPointInBounds(bounds);
-            GameObject hsc = Spawn();
-            hsc.GetComponent<HSCAgent>().Init(bounds, pos, Random.rotation,i);
+        if (initFromFile)
+        {   
+            string[] Lines = System.IO.File.ReadAllLines("initPos.csv");
+            spawnCount = Lines.Length;
+     
 
-            StemCells.Add(i, new cell(pos, Vector3.zero));
+            for (var i = 0; i < spawnCount; i++) 
+            {
+
+                GameObject hsc = Spawn();
+
+                var XYZ = Lines[i].Split(',');
+
+                var x = float.Parse(XYZ[0]) * 20;
+                var y = float.Parse(XYZ[1]) * 20;
+                var z = float.Parse(XYZ[2]) * 20;
+
+                Vector3 pos = new Vector3(x, y, z);
+
+
+                hsc.GetComponent<HSCAgent>().Init(bounds, pos, Random.rotation,i);
+
+                StemCells.Add(i, new cell(pos, Vector3.zero));
             
+            }
+        
+        }
+        else
+        {
+
+            for (var i = 0; i < spawnCount; i++)
+            {
+                Vector3 pos = Utilities.RandomPointInBounds(bounds);
+                GameObject hsc = Spawn();
+
+                hsc.GetComponent<HSCAgent>().Init(bounds, pos, Random.rotation, i);
+
+                StemCells.Add(i, new cell(pos, Vector3.zero));
+
+            }
+
         }
     }
 
@@ -119,7 +173,15 @@ public class HSCController : AbstractController
         base.Step();
 
         avgDistCovered /= agents.Count;
-        Debug.Log("position0: " + StemCells[1].position.ToString());
+
+        string positions = "";
+        for(int i = 0; i < spawnCount; i++)
+        {
+            positions += StemCells[i].getPos().x.ToString() + "," + StemCells[i].getPos().y.ToString() + ","+ StemCells[i].getPos().z.ToString()+",";
+        }
+            
+        WriteFile(positions);
+
     }
 
     [ExecuteInEditMode]
@@ -146,4 +208,49 @@ public class HSCController : AbstractController
     {
         StemCells[id].addState(newPos, newVelocity);
     }
+
+    private void CreateFile()
+    {
+
+        Debug.Log("Creating file...");
+
+
+        if (File.Exists(filename))
+        {
+            File.Delete(filename);// Delete previous log file
+        }
+        
+        File.Create(filename).Close();// Create new log file
+        
+
+        Debug.Log("I created a file!");
+    }
+
+    private void ReadFile(string filepath)
+    {
+        using (StreamReader reader = new StreamReader(filepath))
+        {
+            while (!reader.EndOfStream)//while we haven't reached the end of file...
+            {
+
+                Debug.Log(reader.ReadLine());
+            }
+        }
+    }
+
+
+    private void WriteFile(string line)
+    {
+        using (StreamWriter writer = new StreamWriter(filename, append: true))
+        {
+
+            writer.WriteLine();
+            writer.Write(line);
+
+        }
+
+    }
+
+
+
 }
