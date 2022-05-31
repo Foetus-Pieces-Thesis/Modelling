@@ -7,8 +7,8 @@ public class PlayerMovement : MonoBehaviour
     public CharacterController controller;
     public float speed = 100f;
     public float mouseSensitivity = 500f;
-    private float xRotation = 0f;
-    private float yRotation = 0f;
+    //private float xRotation = 0f;
+    //private float yRotation = 0f;
 
     void Start()
     {
@@ -34,10 +34,10 @@ public class PlayerMovement : MonoBehaviour
             y -= 50f * Time.deltaTime;
         }
 
-        move = transform.right * x + transform.forward * z + transform.up*y;
+        move = transform.right * x + transform.forward * z + transform.up * y;
 
 
-        // Rotation - Mouse Look
+        /*// Rotation - Mouse Look
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
 
@@ -45,7 +45,7 @@ public class PlayerMovement : MonoBehaviour
         xRotation = Mathf.Clamp(xRotation, -90f, 90f);
         yRotation += mouseX;
 
-        transform.localRotation = Quaternion.Euler(xRotation, yRotation, 0f);
+        transform.localRotation = Quaternion.Euler(xRotation, yRotation, 0f);*/
 
         // Attractor vector towards origin of cell cluster - press SPACE to move towards origin
         Vector3 attractor = (this.transform.position * -1.0f).normalized * 1f;
